@@ -172,6 +172,12 @@ var UIController = (function () {
     return (type === 'exp' ? sign = '-' : sign = '+') + ' ' + int + '.' + dec;
   };
 
+  nodeListForEach = function(list, cb) {
+    for(let i = 0; i < list.length; i++) {
+      cb(list[i], i);
+    }
+  };
+
   return {
     getInput: function () {
       return {
@@ -207,6 +213,7 @@ var UIController = (function () {
           '</div>' +
           '</div>';
       }
+
       //replace the placeholders text with some data
       newHtml = html.replace('%id%', obj.id);
       newHtml = newHtml.replace('%description%', obj.description);
@@ -246,14 +253,8 @@ var UIController = (function () {
       }
     },
     displayPercentages: function(percentage) {
-      var fields, nodeListForEach;
+      var fields;
       fields = document.querySelectorAll(DOMStrings.expensesPercLabel);
-
-      nodeListForEach = function(list, cb) {
-        for(let i = 0; i < list.length; i++) {
-          cb(list[i], i);
-        }
-      }
 
       nodeListForEach(fields, function(curr, index) {
         if(percentage[index] > 0) {
@@ -273,6 +274,19 @@ var UIController = (function () {
 
       document.querySelector(DOMStrings.dateLabel).textContent = months[month] + " " + year;
     },
+    changedType: function() {
+      var fields;
+      fields = document.querySelectorAll(
+        DOMStrings.inputType + ', ' +
+        DOMStrings.inputDescription + ', ' +
+        DOMStrings.inputValue
+      );
+      nodeListForEach(fields, function(cur) {
+        cur.classList.toggle('red-focus');
+      });
+
+      document.querySelector(DOMStrings.inputBtn).classList.toggle('red');
+    },
     getDOMStrings: function () {
       return DOMStrings;
     }
@@ -281,7 +295,7 @@ var UIController = (function () {
 })();
 
 /**
- * Global App controller
+ * GLOBAL APP CONTROLLER
  * @param  {object} budgetCtrl - Budget Controller
  * @param  {object} UICtrl - UI Controller
  */
@@ -299,6 +313,7 @@ var controller = (function (budgetCtrl, UICtrl) {
       }
     });
     document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
+    document.querySelector(DOM.inputType).addEventListener('change', UICtrl.changedType);
   };
 
   updatePercentages = function () {
