@@ -155,8 +155,22 @@ var UIController = (function () {
     expensesLabel: '.budget__expenses--value',
     percentageLabel: '.budget__expenses--percentage',
     container: '.container',
-    expensesPercLabel: '.item__percentage'
+    expensesPercLabel: '.item__percentage',
+    dateLabel: '.budget__title--month' 
   }
+
+  formatNumber = function(num, type) {
+    var numSplit, int, dec, sign;
+    num = Math.abs(num);
+    num = num.toFixed(2);
+
+    numSplit = num.split(".");
+    [int, dec] = numSplit;
+    if(int.length > 3) {
+      int = int.substr(0,int.length - 3) + "," + int.substr(int.length - 3, 3);
+    } 
+    return (type === 'exp' ? sign = '-' : sign = '+') + ' ' + int + '.' + dec;
+  };
 
   return {
     getInput: function () {
@@ -174,7 +188,7 @@ var UIController = (function () {
         html = '<div class="item clearfix" id="inc-%id%">' +
           '<div class="item__description">%description%</div>' +
           '<div class="right clearfix">' +
-          '<div class="item__value">+ %value%</div>' +
+          '<div class="item__value">%value%</div>' +
           '<div class="item__delete">' +
           '<button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button>' +
           '</div>' +
@@ -185,8 +199,8 @@ var UIController = (function () {
         html = '<div class="item clearfix" id="exp-%id%">' +
           '<div class="item__description">%description%</div>' +
           '<div class="right clearfix">' +
-          '<div class="item__value">- %value%</div>' +
-          '<div class="item__percentage">21%</div>' +
+          '<div class="item__value">%value%</div>' +
+          '<div class="item__percentage">---</div>' +
           '<div class="item__delete">' +
           '<button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button>' +
           '</div>' +
@@ -196,7 +210,7 @@ var UIController = (function () {
       //replace the placeholders text with some data
       newHtml = html.replace('%id%', obj.id);
       newHtml = newHtml.replace('%description%', obj.description);
-      newHtml = newHtml.replace('%value%', obj.value);
+      newHtml = newHtml.replace('%value%', formatNumber(obj.value, type));
       //Insert the HTML into the dom
       document.querySelector(element).insertAdjacentHTML('beforeend', newHtml);
     },
@@ -219,12 +233,14 @@ var UIController = (function () {
 
     },
     displayBudget: function (obj) {
-      document.querySelector(DOMStrings.budgetLabel).textContent = obj.budget;
-      document.querySelector(DOMStrings.incomeLabel).textContent = obj.totalInc;
-      document.querySelector(DOMStrings.expensesLabel).textContent = obj.totalExp;
+      var type;
+      type = obj.budget > 0 ? 'inc' : 'exp';
+      document.querySelector(DOMStrings.budgetLabel).textContent = formatNumber(obj.budget, type);
+      document.querySelector(DOMStrings.incomeLabel).textContent = formatNumber(obj.totalInc, 'inc');
+      document.querySelector(DOMStrings.expensesLabel).textContent = formatNumber(obj.totalExp, 'exp');
 
       if (obj.percentage > 0) {
-        document.querySelector(DOMStrings.percentageLabel).textContent = obj.percentage;
+        document.querySelector(DOMStrings.percentageLabel).textContent = obj.percentage + '%';
       } else {
         document.querySelector(DOMStrings.percentageLabel).textContent = "---";
       }
@@ -247,6 +263,15 @@ var UIController = (function () {
         }
         
       });
+    },
+    displayMonth: function() {
+      var now, year, month;
+      months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+      now = new Date();
+      year = now.getFullYear();
+      month = now.getMonth();
+
+      document.querySelector(DOMStrings.dateLabel).textContent = months[month] + " " + year;
     },
     getDOMStrings: function () {
       return DOMStrings;
@@ -336,6 +361,7 @@ var controller = (function (budgetCtrl, UICtrl) {
   return {
     init: function () {
       console.log("Application has started");
+      UICtrl.displayMonth();
       UICtrl.displayBudget({
         budget: 0,
         totalInc: 0,
