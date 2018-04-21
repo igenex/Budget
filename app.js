@@ -25,6 +25,15 @@ var budgetController = (function () {
     this.value = value;
   };
 
+  calculateTotal = function (type) {
+    var sum = 0;
+    data.allItems[type].forEach(item => {
+      sum += item.value;
+    });
+    data.totals[type] = sum;
+  };
+
+
   //Data Structure for app
   var data = {
     allItems: {
@@ -39,9 +48,11 @@ var budgetController = (function () {
     percentage: -1
   };
 
+
+
   return {
     addItem: function (type, desc, val) {
-      var newItem, ID;
+      var newItem, ID, calculateTotal;
 
       //new id
       if (data.allItems[type].length > 0) {
@@ -49,15 +60,6 @@ var budgetController = (function () {
       } else {
         ID = 0;
       }
-
-      var calculateTotal = function (type) {
-        var sum = 0;
-        data.allItems[type].forEach(item => {
-          sum += item.value;
-        });
-        data.totals[type] = sum;
-      };
-
 
       //new item
       if (type === 'exp') {
@@ -70,15 +72,27 @@ var budgetController = (function () {
       data.allItems[type].push(newItem);
       return newItem;
     },
+    deleteItem: function(type, id) {
+      var ids, index
+      ids = data.allItems[type].map(item => {
+        console.log(item.id);
+        return item.id;
+      });
+      index = ids.indexOf(id);
+
+      if(index !== -1) {
+        data.allItems[type].splice(index, 1);
+      }
+    },
     calculateBudget: function () {
       // calculate total income & expenses
       calculateTotal('exp');
       calculateTotal('inc');
       // calculate the budget: income - expenses
-      data.budget = Math.round((data.totals.inc - data.totals.exp) * 100);
+      data.budget = data.totals.inc - data.totals.exp
       // calculate the % of income that we spent
       if (data.totals.inc > 0) {
-        data.percentage = data.totals.exp / data.totals.inc;
+        data.percentage = Math.round((data.totals.exp / data.totals.inc) * 100);
       } else {
         data.percentage = -1;
       }
@@ -112,7 +126,8 @@ var UIController = (function () {
     budgetLabel: '.budget__value',
     incomeLabel: '.budget__income--value',
     expensesLabel: '.budget__expenses--value',
-    percentageLabel: '.budget__expenses--percentage'
+    percentageLabel: '.budget__expenses--percentage',
+    container: '.container'
   }
 
   return {
@@ -128,7 +143,7 @@ var UIController = (function () {
       //Create HTML with placeholer text
       if (type === "inc") {
         element = DOMStrings.incomeContainer;
-        html = '<div class="item clearfix" id="income-%id%">' +
+        html = '<div class="item clearfix" id="inc-%id%">' +
           '<div class="item__description">%description%</div>' +
           '<div class="right clearfix">' +
           '<div class="item__value">+ %value%</div>' +
@@ -139,7 +154,7 @@ var UIController = (function () {
           '</div>';
       } else if (type === "exp") {
         element = DOMStrings.expensesContainer;
-        html = '<div class="item clearfix" id="expense-%id%">' +
+        html = '<div class="item clearfix" id="exp-%id%">' +
           '<div class="item__description">%description%</div>' +
           '<div class="right clearfix">' +
           '<div class="item__value">- %value%</div>' +
@@ -192,7 +207,7 @@ var UIController = (function () {
  * @param  {object} UICtrl - UI Controller
  */
 var controller = (function (budgetCtrl, UICtrl) {
-  var setupEventListeners, updateBudget, ctrlAddItem, budget;
+  var setupEventListeners, updateBudget, ctrlAddItem, budget, ctrlDeleteItem;
 
   setupEventListeners = function () {
     var DOM = UICtrl.getDOMStrings();
@@ -202,8 +217,26 @@ var controller = (function (budgetCtrl, UICtrl) {
       if (e.keyCode === 13 || e.which === 13) {
         ctrlAddItem();
       }
-    })
+    });
+    document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
   };
+
+  ctrlDeleteItem = function(e) {
+    var itemID, splitID, type, ID;
+    itemID = e.target.parentElement.parentElement.parentElement.parentElement.id;
+    if(itemID) {
+        splitID = itemID.split("-");
+        [type, ID] = splitID;
+
+        //1. Delete the item from the data structure
+        budgetCtrl.deleteItem(type, +ID);
+        //2. Delete the item from the UI
+
+        //3. Upldate and show the new budget
+    }
+  };
+
+
 
   updateBudget = function () {
     //1. Calculate the budget
